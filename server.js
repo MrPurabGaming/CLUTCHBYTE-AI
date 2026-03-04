@@ -1,8 +1,8 @@
 import express from "express";
-import fetch from "node-fetch";
 import cors from "cors";
 
 const app = express();
+
 app.use(cors());
 app.use(express.json());
 
@@ -12,7 +12,7 @@ app.post("/chat", async (req, res) => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": "Bearer YOUR_OPENROUTER_KEY"
+        "Authorization": `Bearer ${process.env.OPENROUTER_KEY}`
       },
       body: JSON.stringify(req.body)
     });
@@ -21,10 +21,15 @@ app.post("/chat", async (req, res) => {
     res.json(data);
 
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Server error" });
   }
 });
 
-app.listen(3000, () => {
-  console.log("Server running on port 3000");
+app.get("/", (req, res) => {
+  res.send("ClutchByte API Running ✅");
+});
+
+app.listen(process.env.PORT || 3000, () => {
+  console.log("Server running...");
 });
