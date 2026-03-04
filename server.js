@@ -1,35 +1,51 @@
 import express from "express";
 import cors from "cors";
+import fetch from "node-fetch";
+import dotenv from "dotenv";
+import pkg from "pg";
+
+dotenv.config();
+const { Pool } = pkg;
 
 const app = express();
-
 app.use(cors());
 app.use(express.json());
 
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: { rejectUnauthorized: false }
+});
+
 app.post("/chat", async (req, res) => {
+  const { userId, messages } = req.body;
+
   try {
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${process.env.OPENROUTER_KEY}`
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
       },
-      body: JSON.stringify(req.body)
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages
+      })
     });
 
     const data = await response.json();
-    res.json(data);
+    const reply = data.choices[0].message.content;
 
-  } catch (error) {
-    console.error(error);
+    await pool.query(
+      "INSERT INTO chats(user_id, message) VALUES($1,$2)",
+      [userId, reply]
+    );
+
+    res.json(data);
+  } catch (err) {
     res.status(500).json({ error: "Server error" });
   }
 });
 
-app.get("/", (req, res) => {
-  res.send("ClutchByte API Running ✅");
-});
-
-app.listen(process.env.PORT || 3000, () => {
-  console.log("Server running...");
-});
+app.listen(process.env.PORT || 10000, () =>
+  console.log("Enterprise AI running 🚀")
+);
