@@ -1,6 +1,5 @@
 import express from "express";
 import cors from "cors";
-import fetch from "node-fetch";
 import dotenv from "dotenv";
 import pkg from "pg";
 
@@ -11,53 +10,53 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-/* ==============================
+/* =============================
    DATABASE CONNECTION
-============================== */
+============================= */
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
+  ssl: { rejectUnauthorized: false }
 });
 
-/* ==============================
-   ROOT ROUTE (Fix Cannot GET /)
-============================== */
+/* =============================
+   ROOT ROUTE (Fixes Cannot GET /)
+============================= */
 app.get("/", (req, res) => {
-  res.send("🚀 ClutchByte Enterprise Backend is Running");
+  res.send("🚀 ClutchByte Enterprise Backend Running");
 });
 
-/* ==============================
-   HEALTH CHECK ROUTE
-============================== */
+/* =============================
+   HEALTH CHECK
+============================= */
 app.get("/health", (req, res) => {
-  res.json({ status: "OK", uptime: process.uptime() });
+  res.json({
+    status: "OK",
+    uptime: process.uptime()
+  });
 });
 
-/* ==============================
+/* =============================
    CHAT ROUTE
-============================== */
+============================= */
 app.post("/chat", async (req, res) => {
   try {
     const { userId, messages } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
-      return res.status(400).json({ error: "Messages are required" });
+      return res.status(400).json({ error: "Messages required" });
     }
 
-    const response = await fetch(
-      "https://api.openai.com/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: "gpt-3.5-turbo",
-          messages: messages,
-        }),
-      }
-    );
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo",
+        messages
+      })
+    });
 
     const data = await response.json();
 
@@ -76,15 +75,16 @@ app.post("/chat", async (req, res) => {
     }
 
     res.json(data);
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Server error" });
+    console.error("Server error:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 
-/* ==============================
+/* =============================
    START SERVER
-============================== */
+============================= */
 const PORT = process.env.PORT || 10000;
 
 app.listen(PORT, () => {
