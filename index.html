@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ClutchByte AI</title>
 
 <style>
@@ -25,16 +25,13 @@ overflow:hidden;
 }
 
 .sidebar{
-width:250px;
+width:230px;
 background:#0b1220;
 border-right:1px solid var(--border);
 display:flex;
 flex-direction:column;
-padding:15px;
-}
-
-.sidebar h2{
-margin-bottom:10px;
+padding:12px;
+overflow:auto;
 }
 
 .sidebar button{
@@ -48,13 +45,18 @@ cursor:pointer;
 }
 
 .chat-item{
-padding:6px;
+padding:8px;
 cursor:pointer;
+border-radius:6px;
 font-size:14px;
 }
 
 .chat-item:hover{
-background:rgba(255,255,255,.05);
+background:rgba(255,255,255,.08);
+}
+
+.active{
+background:rgba(37,99,235,.3);
 }
 
 .main{
@@ -66,8 +68,7 @@ flex-direction:column;
 .header{
 padding:12px;
 border-bottom:1px solid var(--border);
-display:flex;
-justify-content:space-between;
+font-weight:bold;
 }
 
 .messages{
@@ -80,10 +81,11 @@ gap:10px;
 }
 
 .message{
-max-width:80%;
+max-width:85%;
 padding:10px;
 border-radius:8px;
 font-size:14px;
+white-space:pre-wrap;
 }
 
 .user{
@@ -136,6 +138,7 @@ display:none;
 flex-direction:column;
 gap:10px;
 width:300px;
+z-index:10;
 }
 
 .settings input{
@@ -151,17 +154,13 @@ color:white;
 <body>
 
 <div class="sidebar">
-<h2>Chats</h2>
-<button onclick="newChat()">+ New Chat</button>
+<button onclick="createChat()">+ New Chat</button>
 <div id="chatList"></div>
 <button onclick="openSettings()">Settings</button>
 </div>
 
 <div class="main">
-<div class="header">
-<div>ClutchByte AI</div>
-</div>
-
+<div class="header">ClutchByte AI</div>
 <div id="messages" class="messages"></div>
 
 <div class="input-area">
@@ -171,9 +170,9 @@ color:white;
 </div>
 
 <div id="settings" class="settings">
-<h3>API Settings</h3>
+<h3>Settings</h3>
 <input id="apiKey" placeholder="OpenRouter API Key">
-<input id="model" placeholder="Model" value="deepseek/deepseek-r1:free">
+<input id="model" placeholder="Model Name">
 <button onclick="saveSettings()">Save</button>
 <button onclick="closeSettings()">Close</button>
 </div>
@@ -182,37 +181,48 @@ color:white;
 let chats = JSON.parse(localStorage.getItem("cb_chats") || "[]");
 let current = localStorage.getItem("cb_current");
 
-if(chats.length === 0){
-  chats.push({id:Date.now(),title:"New Chat",messages:[]});
+if(!chats.length){
+  const first = {id: Date.now(), title:"Chat 1", messages:[]};
+  chats.push(first);
+  current = first.id;
+  saveAll();
+}
+
+if(!current){
   current = chats[0].id;
-  save();
+  saveAll();
 }
 
-function save(){
-  localStorage.setItem("cb_chats",JSON.stringify(chats));
-  localStorage.setItem("cb_current",current);
+function saveAll(){
+  localStorage.setItem("cb_chats", JSON.stringify(chats));
+  localStorage.setItem("cb_current", current);
 }
 
-function newChat(){
-  const chat = {id:Date.now(),title:"New Chat",messages:[]};
-  chats.unshift(chat);
-  current = chat.id;
-  save();
+function createChat(){
+  const newChat = {
+    id: Date.now(),
+    title: "Chat " + (chats.length+1),
+    messages:[]
+  };
+  chats.unshift(newChat);
+  current = newChat.id;
+  saveAll();
   renderChats();
-  render();
+  renderMessages();
 }
 
 function renderChats(){
   const list = document.getElementById("chatList");
   list.innerHTML="";
-  chats.forEach(c=>{
+  chats.forEach(chat=>{
     const div=document.createElement("div");
-    div.className="chat-item";
-    div.innerText=c.title;
+    div.className="chat-item"+(chat.id==current?" active":"");
+    div.textContent=chat.title;
     div.onclick=()=>{
-      current=c.id;
-      save();
-      render();
+      current=chat.id;
+      saveAll();
+      renderChats();
+      renderMessages();
     };
     list.appendChild(div);
   });
@@ -222,14 +232,16 @@ function getCurrent(){
   return chats.find(c=>c.id==current);
 }
 
-function render(){
-  const chat=getCurrent();
+function renderMessages(){
   const box=document.getElementById("messages");
   box.innerHTML="";
-  chat.messages.forEach(m=>{
+  const chat=getCurrent();
+  if(!chat) return;
+
+  chat.messages.forEach(msg=>{
     const div=document.createElement("div");
-    div.className="message "+m.role;
-    div.innerText=m.content;
+    div.className="message "+msg.role;
+    div.textContent=msg.content;
     box.appendChild(div);
   });
   box.scrollTop=box.scrollHeight;
@@ -243,8 +255,8 @@ async function send(){
   const chat=getCurrent();
   chat.messages.push({role:"user",content:text});
   input.value="";
-  render();
-  save();
+  renderMessages();
+  saveAll();
 
   const key=localStorage.getItem("cb_apiKey");
   if(!key){
@@ -252,9 +264,9 @@ async function send(){
     return;
   }
 
-  const ai={role:"ai",content:"Thinking..."};
-  chat.messages.push(ai);
-  render();
+  const aiMsg={role:"ai",content:"Thinking..."};
+  chat.messages.push(aiMsg);
+  renderMessages();
 
   try{
     const res=await fetch("https://openrouter.ai/api/v1/chat/completions",{
@@ -266,7 +278,7 @@ async function send(){
       body:JSON.stringify({
         model: localStorage.getItem("cb_model") || "deepseek/deepseek-r1:free",
         messages: chat.messages.map(m=>({
-          role: m.role==="ai" ? "assistant" : m.role,
+          role: m.role==="ai"?"assistant":m.role,
           content: m.content
         })),
         stream:false
@@ -274,18 +286,20 @@ async function send(){
     });
 
     const data=await res.json();
-    ai.content=data.choices?.[0]?.message?.content || "No response";
-    render();
-    save();
+    aiMsg.content=data.choices?.[0]?.message?.content || "No response";
+    renderMessages();
+    saveAll();
 
-  }catch(e){
-    ai.content="Error connecting to AI";
-    render();
+  }catch(err){
+    aiMsg.content="Error connecting to AI";
+    renderMessages();
   }
 }
 
 function openSettings(){
   document.getElementById("settings").style.display="flex";
+  document.getElementById("apiKey").value=localStorage.getItem("cb_apiKey")||"";
+  document.getElementById("model").value=localStorage.getItem("cb_model")||"deepseek/deepseek-r1:free";
 }
 
 function closeSettings(){
@@ -293,13 +307,13 @@ function closeSettings(){
 }
 
 function saveSettings(){
-  localStorage.setItem("cb_apiKey",document.getElementById("apiKey").value);
-  localStorage.setItem("cb_model",document.getElementById("model").value);
+  localStorage.setItem("cb_apiKey", document.getElementById("apiKey").value.trim());
+  localStorage.setItem("cb_model", document.getElementById("model").value.trim());
   closeSettings();
 }
 
 renderChats();
-render();
+renderMessages();
 </script>
 
 </body>
