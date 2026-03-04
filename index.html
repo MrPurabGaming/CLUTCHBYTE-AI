@@ -10,10 +10,10 @@ body{
 margin:0;
 font-family:system-ui;
 background:#0f172a;
-color:#fff;
+color:white;
 }
 
-/* Header */
+/* HEADER */
 .header{
 position:fixed;
 top:0;
@@ -28,7 +28,20 @@ font-weight:bold;
 z-index:10;
 }
 
-/* Messages */
+.settings-btn{
+position:absolute;
+right:10px;
+top:10px;
+background:#2563eb;
+border:none;
+color:white;
+padding:6px 12px;
+border-radius:6px;
+cursor:pointer;
+font-size:13px;
+}
+
+/* MESSAGES */
 .messages{
 position:fixed;
 top:50px;
@@ -42,7 +55,6 @@ flex-direction:column;
 gap:10px;
 }
 
-/* Message bubbles */
 .message{
 padding:10px;
 border-radius:8px;
@@ -61,7 +73,7 @@ align-self:flex-start;
 background:#1f2937;
 }
 
-/* Input bar */
+/* INPUT BAR */
 .input-area{
 position:fixed;
 bottom:0;
@@ -82,29 +94,20 @@ border-radius:6px;
 padding:8px;
 background:#1f2937;
 color:white;
+font-size:14px;
 }
 
-button{
+.send-btn{
 margin-left:8px;
 border:none;
 border-radius:6px;
 padding:8px 14px;
 background:#2563eb;
 color:white;
+cursor:pointer;
 }
 
-/* Settings button */
-.settings-btn{
-position:fixed;
-top:10px;
-right:10px;
-background:#2563eb;
-padding:5px 10px;
-border-radius:6px;
-font-size:12px;
-}
-
-/* Modal */
+/* MODAL */
 .modal{
 position:fixed;
 top:50%;
@@ -121,30 +124,42 @@ width:280px;
 }
 
 .modal input{
-padding:6px;
+padding:8px;
 border-radius:6px;
 border:none;
 background:#111827;
 color:white;
+font-size:14px;
+}
+
+.modal button{
+padding:8px;
+border:none;
+border-radius:6px;
+background:#2563eb;
+color:white;
+cursor:pointer;
 }
 </style>
 </head>
 <body>
 
-<div class="header">ClutchByte AI</div>
+<div class="header">
+ClutchByte AI
 <button class="settings-btn" onclick="openSettings()">Settings</button>
+</div>
 
 <div id="messages" class="messages"></div>
 
 <div class="input-area">
 <textarea id="input" rows="1" placeholder="Type message..."></textarea>
-<button onclick="send()">Send</button>
+<button class="send-btn" onclick="send()">Send</button>
 </div>
 
 <div id="modal" class="modal">
-<h3>Settings</h3>
-<input id="apiKey" placeholder="OpenRouter API Key">
-<input id="model" placeholder="Model" value="deepseek/deepseek-r1:free">
+<h3>API Settings</h3>
+<input id="apiKey" placeholder="Enter OpenRouter API Key">
+<input id="model" placeholder="Model name (optional)">
 <button onclick="saveSettings()">Save</button>
 <button onclick="closeSettings()">Close</button>
 </div>
@@ -152,7 +167,7 @@ color:white;
 <script>
 let messages = JSON.parse(localStorage.getItem("cb_msgs") || "[]");
 
-function save(){
+function saveMessages(){
 localStorage.setItem("cb_msgs", JSON.stringify(messages));
 }
 
@@ -176,11 +191,11 @@ if(!text) return;
 messages.push({role:"user",content:text});
 input.value="";
 render();
-save();
+saveMessages();
 
 const key=localStorage.getItem("cb_apiKey");
 if(!key){
-alert("Add API key in Settings");
+alert("Please add API key in Settings");
 return;
 }
 
@@ -208,10 +223,10 @@ stream:false
 const data=await res.json();
 aiMsg.content=data.choices?.[0]?.message?.content||"No response";
 render();
-save();
+saveMessages();
 
 }catch(e){
-aiMsg.content="Connection error";
+aiMsg.content="Connection error (Maybe CORS)";
 render();
 }
 }
