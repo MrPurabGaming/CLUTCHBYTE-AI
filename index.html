@@ -1,335 +1,297 @@
 <!DOCTYPE html>
 <html lang="en" class="h-full">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <title>Universal AI Chat</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Universal AI</title>
 
-  <!-- Tailwind CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
+<!-- ✅ Stable Tailwind CSS (NO JS CDN) -->
+<link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet">
 
-  <!-- Marked.js -->
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<!-- Marked.js -->
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
-  <style>
-    html, body { height: 100%; }
-    pre { position: relative; }
-    code { font-family: monospace; }
-  </style>
+<style>
+html, body { height:100%; }
+.dark { background-color:#18181b; }
+.dark .dark\:bg-zinc-800 { background-color:#27272a; }
+.dark .dark\:bg-zinc-700 { background-color:#3f3f46; }
+.dark .dark\:border-zinc-700 { border-color:#3f3f46; }
+.dark .dark\:text-black { color:black; }
+.dark .dark\:bg-white { background:white; }
+</style>
 </head>
 
-<body class="bg-gray-100 dark:bg-zinc-900 transition-colors duration-300">
+<body class="bg-gray-100 transition-colors duration-300">
 
-<!-- Loader (Prevents blank page issue) -->
 <div id="loading" class="flex items-center justify-center min-h-screen text-lg font-semibold">
-  Loading App...
+Loading App...
 </div>
 
-<!-- App Root -->
 <div id="app" class="hidden min-h-screen flex">
 
-  <!-- Sidebar -->
-  <aside id="sidebar"
-    class="fixed md:relative z-40 w-72 bg-white dark:bg-zinc-800 border-r border-gray-200 dark:border-zinc-700
-           flex flex-col transform -translate-x-full md:translate-x-0 transition-transform duration-300">
+<!-- Sidebar -->
+<aside id="sidebar"
+class="fixed md:relative z-40 w-72 bg-white border-r border-gray-200
+flex flex-col transform -translate-x-full md:translate-x-0 transition-transform duration-300">
 
-    <div class="p-4 border-b dark:border-zinc-700 flex justify-between items-center">
-      <h2 class="font-bold">Chats</h2>
-      <button id="closeSidebar" class="md:hidden text-xl">✕</button>
-    </div>
+<div class="p-4 border-b flex justify-between items-center">
+<h2 class="font-bold">Chats</h2>
+<button id="closeSidebar" class="md:hidden text-xl">✕</button>
+</div>
 
-    <button id="newChatBtn"
-      class="m-4 bg-black text-white dark:bg-white dark:text-black py-2 rounded-lg">
-      + New Chat
-    </button>
+<button id="newChatBtn"
+class="m-4 bg-black text-white py-2 rounded-lg">
++ New Chat
+</button>
 
-    <div id="chatList" class="flex-1 overflow-y-auto px-2 space-y-1"></div>
+<div id="chatList" class="flex-1 overflow-y-auto px-2 space-y-1"></div>
 
-    <div class="p-4 border-t dark:border-zinc-700 space-y-2">
-      <button id="settingsBtn" class="w-full text-left">⚙ Settings</button>
-      <button id="systemPromptBtn" class="w-full text-left">🧠 System Prompt</button>
-      <button id="darkToggle" class="w-full text-left">🌙 Toggle Dark Mode</button>
-    </div>
-  </aside>
+<div class="p-4 border-t space-y-2">
+<button id="settingsBtn" class="w-full text-left">⚙ Settings</button>
+<button id="systemPromptBtn" class="w-full text-left">🧠 System Prompt</button>
+<button id="darkToggle" class="w-full text-left">🌙 Toggle Dark Mode</button>
+</div>
+</aside>
 
-  <!-- Main -->
-  <div class="flex-1 flex flex-col w-full">
+<!-- Main -->
+<div class="flex-1 flex flex-col w-full">
 
-    <!-- Top Bar -->
-    <header class="flex items-center justify-between p-4 border-b bg-white dark:bg-zinc-800 dark:border-zinc-700">
-      <button id="openSidebar" class="md:hidden text-xl">☰</button>
-      <h1 class="font-semibold">Universal AI</h1>
-      <div></div>
-    </header>
+<header class="flex items-center justify-between p-4 border-b bg-white">
+<button id="openSidebar" class="md:hidden text-xl">☰</button>
+<h1 class="font-semibold">Universal AI</h1>
+<div></div>
+</header>
 
-    <!-- Messages -->
-    <main id="messages"
-      class="flex-1 overflow-y-auto p-4 space-y-4">
-    </main>
+<main id="messages" class="flex-1 overflow-y-auto p-4 space-y-4"></main>
 
-    <!-- Input -->
-    <div class="sticky bottom-0 bg-white dark:bg-zinc-800 border-t dark:border-zinc-700 p-3">
-      <div class="flex gap-2">
-        <textarea id="messageInput"
-          rows="1"
-          placeholder="Message AI..."
-          class="flex-1 resize-none rounded-lg border p-2 dark:bg-zinc-700"></textarea>
-        <button id="sendBtn"
-          class="bg-black text-white dark:bg-white dark:text-black px-4 rounded-lg">
-          Send
-        </button>
-      </div>
-    </div>
+<div class="sticky bottom-0 bg-white border-t p-3">
+<div class="flex gap-2">
+<textarea id="messageInput" rows="1"
+placeholder="Message AI..."
+class="flex-1 resize-none rounded-lg border p-2"></textarea>
+<button id="sendBtn"
+class="bg-black text-white px-4 rounded-lg">
+Send
+</button>
+</div>
+</div>
 
-  </div>
+</div>
 </div>
 
 <!-- Settings Modal -->
 <div id="settingsModal"
-  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4">
-  <div class="bg-white dark:bg-zinc-800 p-6 rounded-xl w-full max-w-md space-y-4">
-    <h2 class="text-lg font-bold">Settings</h2>
+class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+<div class="bg-white p-6 rounded-xl w-full max-w-md space-y-4">
+<h2 class="text-lg font-bold">Settings</h2>
 
-    <input id="apiKeyInput"
-      type="password"
-      placeholder="OpenRouter API Key"
-      class="w-full border p-2 rounded dark:bg-zinc-700">
+<input id="apiKeyInput" type="password"
+placeholder="OpenRouter API Key"
+class="w-full border p-2 rounded">
 
-    <input id="modelInput"
-      type="text"
-      value="deepseek/deepseek-r1:free"
-      class="w-full border p-2 rounded dark:bg-zinc-700">
+<input id="modelInput" type="text"
+value="deepseek/deepseek-r1:free"
+class="w-full border p-2 rounded">
 
-    <div class="flex justify-end gap-2">
-      <button id="closeSettings">Cancel</button>
-      <button id="saveSettings"
-        class="bg-black text-white dark:bg-white dark:text-black px-4 py-2 rounded">
-        Save
-      </button>
-    </div>
-  </div>
+<div class="flex justify-end gap-2">
+<button id="closeSettings">Cancel</button>
+<button id="saveSettings"
+class="bg-black text-white px-4 py-2 rounded">
+Save
+</button>
+</div>
+</div>
 </div>
 
 <!-- System Prompt Modal -->
 <div id="systemModal"
-  class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4">
-  <div class="bg-white dark:bg-zinc-800 p-6 rounded-xl w-full max-w-md space-y-4">
-    <h2 class="text-lg font-bold">System Prompt</h2>
+class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4">
+<div class="bg-white p-6 rounded-xl w-full max-w-md space-y-4">
+<h2 class="text-lg font-bold">System Prompt</h2>
 
-    <textarea id="systemPromptInput"
-      rows="5"
-      class="w-full border p-2 rounded dark:bg-zinc-700"></textarea>
+<textarea id="systemPromptInput"
+rows="5"
+class="w-full border p-2 rounded"></textarea>
 
-    <div class="flex justify-end gap-2">
-      <button id="closeSystem">Cancel</button>
-      <button id="saveSystem"
-        class="bg-black text-white dark:bg-white dark:text-black px-4 py-2 rounded">
-        Save
-      </button>
-    </div>
-  </div>
+<div class="flex justify-end gap-2">
+<button id="closeSystem">Cancel</button>
+<button id="saveSystem"
+class="bg-black text-white px-4 py-2 rounded">
+Save
+</button>
+</div>
+</div>
 </div>
 
-<!-- SCRIPT AT VERY END (Critical) -->
 <script>
-(function () {
+(function(){
 
-  const app = document.getElementById("app");
-  const loading = document.getElementById("loading");
-  const messagesEl = document.getElementById("messages");
-  const input = document.getElementById("messageInput");
+const app = document.getElementById("app");
+const loading = document.getElementById("loading");
+const messagesEl = document.getElementById("messages");
+const input = document.getElementById("messageInput");
 
-  let chats = JSON.parse(localStorage.getItem("chats") || "[]");
-  let currentChatId = localStorage.getItem("currentChatId");
+let chats = JSON.parse(localStorage.getItem("chats")||"[]");
+let currentChatId = localStorage.getItem("currentChatId");
 
-  if (!chats.length) createNewChat();
+if(!chats.length) createChat();
 
-  function saveChats() {
-    localStorage.setItem("chats", JSON.stringify(chats));
-  }
+function save(){localStorage.setItem("chats",JSON.stringify(chats));}
 
-  function createNewChat() {
-    const chat = {
-      id: Date.now(),
-      title: "New Chat",
-      messages: [],
-      system: ""
-    };
-    chats.unshift(chat);
-    currentChatId = chat.id;
-    saveChats();
-    renderChats();
-    renderMessages();
-  }
+function createChat(){
+const chat={id:Date.now(),title:"New Chat",messages:[],system:""};
+chats.unshift(chat);
+currentChatId=chat.id;
+save();
+renderChats();
+renderMessages();
+}
 
-  function getCurrentChat() {
-    return chats.find(c => c.id == currentChatId);
-  }
+function current(){return chats.find(c=>c.id==currentChatId);}
 
-  function renderChats() {
-    const list = document.getElementById("chatList");
-    list.innerHTML = "";
-    chats.forEach(chat => {
-      const div = document.createElement("div");
-      div.className = "p-2 rounded cursor-pointer hover:bg-gray-200 dark:hover:bg-zinc-700";
-      div.innerHTML = `
-        <div class="flex justify-between items-center">
-          <span>${chat.title}</span>
-          <div class="space-x-1">
-            <button data-rename="${chat.id}">✎</button>
-            <button data-delete="${chat.id}">🗑</button>
-          </div>
-        </div>
-      `;
-      div.onclick = () => {
-        currentChatId = chat.id;
-        localStorage.setItem("currentChatId", currentChatId);
-        renderMessages();
-      };
-      list.appendChild(div);
-    });
-  }
+function renderChats(){
+const list=document.getElementById("chatList");
+list.innerHTML="";
+chats.forEach(chat=>{
+const div=document.createElement("div");
+div.className="p-2 rounded cursor-pointer hover:bg-gray-200";
+div.innerHTML=`<div class="flex justify-between items-center">
+<span>${chat.title}</span>
+<button onclick="deleteChat(${chat.id})">🗑</button>
+</div>`;
+div.onclick=()=>{
+currentChatId=chat.id;
+localStorage.setItem("currentChatId",chat.id);
+renderMessages();
+};
+list.appendChild(div);
+});
+}
 
-  function renderMessages() {
-    const chat = getCurrentChat();
-    messagesEl.innerHTML = "";
-    if (!chat) return;
+window.deleteChat=function(id){
+chats=chats.filter(c=>c.id!=id);
+currentChatId=chats[0]?.id;
+save();
+renderChats();
+renderMessages();
+}
 
-    chat.messages.forEach(m => {
-      const div = document.createElement("div");
-      div.className = m.role === "user"
-        ? "text-right"
-        : "text-left";
+function renderMessages(){
+const chat=current();
+messagesEl.innerHTML="";
+if(!chat)return;
 
-      const bubble = document.createElement("div");
-      bubble.className =
-        "inline-block max-w-xl p-3 rounded-xl " +
-        (m.role === "user"
-          ? "bg-black text-white dark:bg-white dark:text-black"
-          : "bg-gray-200 dark:bg-zinc-700");
+chat.messages.forEach(m=>{
+const wrap=document.createElement("div");
+wrap.className=m.role==="user"?"text-right":"text-left";
 
-      bubble.innerHTML = marked.parse(m.content);
-      div.appendChild(bubble);
-      messagesEl.appendChild(div);
-    });
+const bubble=document.createElement("div");
+bubble.className="inline-block max-w-xl p-3 rounded-xl "+
+(m.role==="user"?"bg-black text-white":"bg-gray-200");
 
-    messagesEl.scrollTop = messagesEl.scrollHeight;
-  }
+bubble.innerHTML=marked.parse(m.content);
+wrap.appendChild(bubble);
+messagesEl.appendChild(wrap);
+});
+messagesEl.scrollTop=messagesEl.scrollHeight;
+}
 
-  async function sendMessage() {
-    const text = input.value.trim();
-    if (!text) return;
+async function send(){
+const text=input.value.trim();
+if(!text)return;
 
-    const chat = getCurrentChat();
-    chat.messages.push({ role: "user", content: text });
-    input.value = "";
-    renderMessages();
-    saveChats();
+const chat=current();
+chat.messages.push({role:"user",content:text});
+input.value="";
+renderMessages();
+save();
 
-    const apiKey = localStorage.getItem("apiKey");
-    const model = localStorage.getItem("model") || "deepseek/deepseek-r1:free";
+const key=localStorage.getItem("apiKey");
+if(!key){alert("Set API key");return;}
 
-    if (!apiKey) {
-      alert("Set API key in settings.");
-      return;
-    }
+const ai={role:"assistant",content:""};
+chat.messages.push(ai);
+renderMessages();
 
-    const aiMessage = { role: "assistant", content: "" };
-    chat.messages.push(aiMessage);
-    renderMessages();
+const response=await fetch("https://openrouter.ai/api/v1/chat/completions",{
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+"Authorization":"Bearer "+key
+},
+body:JSON.stringify({
+model:localStorage.getItem("model")||"deepseek/deepseek-r1:free",
+stream:true,
+messages:chat.messages
+})
+});
 
-    try {
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": "Bearer " + apiKey
-        },
-        body: JSON.stringify({
-          model,
-          stream: true,
-          messages: [
-            ...(chat.system ? [{ role: "system", content: chat.system }] : []),
-            ...chat.messages
-          ]
-        })
-      });
+const reader=response.body.getReader();
+const decoder=new TextDecoder();
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
+while(true){
+const {value,done}=await reader.read();
+if(done)break;
+const chunk=decoder.decode(value);
+chunk.split("\n").forEach(line=>{
+if(line.startsWith("data: ")){
+const data=line.replace("data: ","");
+if(data==="[DONE]")return;
+try{
+const json=JSON.parse(data);
+const token=json.choices?.[0]?.delta?.content;
+if(token){
+ai.content+=token;
+renderMessages();
+save();
+}
+}catch{}
+}
+});
+}
+}
 
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        const chunk = decoder.decode(value);
-        const lines = chunk.split("\n");
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            const data = line.replace("data: ", "");
-            if (data === "[DONE]") break;
-            try {
-              const json = JSON.parse(data);
-              const token = json.choices?.[0]?.delta?.content;
-              if (token) {
-                aiMessage.content += token;
-                renderMessages();
-                saveChats();
-              }
-            } catch {}
-          }
-        }
-      }
+document.getElementById("sendBtn").onclick=send;
+input.addEventListener("keydown",e=>{
+if(e.key==="Enter"&&!e.shiftKey){
+e.preventDefault();send();
+}
+});
 
-    } catch (err) {
-      aiMessage.content = "Error: " + err.message;
-      renderMessages();
-    }
-  }
+document.getElementById("newChatBtn").onclick=createChat;
 
-  document.getElementById("sendBtn").onclick = sendMessage;
-  input.addEventListener("keydown", e => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  });
+document.getElementById("settingsBtn").onclick=
+()=>document.getElementById("settingsModal").classList.remove("hidden");
 
-  document.getElementById("newChatBtn").onclick = createNewChat;
+document.getElementById("closeSettings").onclick=
+()=>document.getElementById("settingsModal").classList.add("hidden");
 
-  document.getElementById("settingsBtn").onclick =
-    () => document.getElementById("settingsModal").classList.remove("hidden");
+document.getElementById("saveSettings").onclick=()=>{
+localStorage.setItem("apiKey",document.getElementById("apiKeyInput").value);
+localStorage.setItem("model",document.getElementById("modelInput").value);
+document.getElementById("settingsModal").classList.add("hidden");
+};
 
-  document.getElementById("closeSettings").onclick =
-    () => document.getElementById("settingsModal").classList.add("hidden");
+document.getElementById("darkToggle").onclick=()=>{
+document.body.classList.toggle("dark");
+localStorage.setItem("dark",document.body.classList.contains("dark"));
+};
 
-  document.getElementById("saveSettings").onclick = () => {
-    localStorage.setItem("apiKey",
-      document.getElementById("apiKeyInput").value);
-    localStorage.setItem("model",
-      document.getElementById("modelInput").value);
-    document.getElementById("settingsModal").classList.add("hidden");
-  };
+if(localStorage.getItem("dark")==="true")
+document.body.classList.add("dark");
 
-  document.getElementById("darkToggle").onclick = () => {
-    document.documentElement.classList.toggle("dark");
-    localStorage.setItem("dark",
-      document.documentElement.classList.contains("dark"));
-  };
+document.getElementById("openSidebar").onclick=
+()=>document.getElementById("sidebar").classList.remove("-translate-x-full");
 
-  if (localStorage.getItem("dark") === "true")
-    document.documentElement.classList.add("dark");
+document.getElementById("closeSidebar").onclick=
+()=>document.getElementById("sidebar").classList.add("-translate-x-full");
 
-  document.getElementById("openSidebar").onclick =
-    () => document.getElementById("sidebar").classList.remove("-translate-x-full");
+renderChats();
+renderMessages();
 
-  document.getElementById("closeSidebar").onclick =
-    () => document.getElementById("sidebar").classList.add("-translate-x-full");
-
-  renderChats();
-  renderMessages();
-
-  loading.style.display = "none";
-  app.classList.remove("hidden");
+loading.style.display="none";
+app.classList.remove("hidden");
 
 })();
 </script>
