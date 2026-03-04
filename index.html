@@ -6,327 +6,233 @@
 <title>ClutchByte AI</title>
 
 <style>
-:root{
---bg:#0f172a;
---panel:#111827;
---border:#1f2937;
---text:#f3f4f6;
---accent:#2563eb;
-}
-
-*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui}
-
 body{
-background:var(--bg);
-color:var(--text);
-height:100vh;
-display:flex;
-overflow:hidden;
+margin:0;
+font-family:system-ui;
+background:#0f172a;
+color:#fff;
 }
 
-/* Sidebar */
-.sidebar{
-width:240px;
-background:#0b1220;
-border-right:1px solid var(--border);
-display:flex;
-flex-direction:column;
-padding:12px;
-transition:.3s;
-}
-
-.sidebar.hidden{
-transform:translateX(-100%);
-position:absolute;
-z-index:20;
-height:100%;
-}
-
-.menu-btn{
-display:none;
-position:absolute;
-top:10px;
-left:10px;
-background:var(--accent);
-border:none;
-padding:6px 10px;
-border-radius:6px;
-color:white;
-z-index:30;
-}
-
-/* Chat */
-.main{
-flex:1;
-display:flex;
-flex-direction:column;
-height:100%;
-}
-
+/* Header */
 .header{
-padding:12px;
-border-bottom:1px solid var(--border);
-text-align:center;
+position:fixed;
+top:0;
+left:0;
+right:0;
+height:50px;
+background:#111827;
+display:flex;
+align-items:center;
+justify-content:center;
 font-weight:bold;
+z-index:10;
 }
 
+/* Messages */
 .messages{
-flex:1;
-overflow:auto;
-padding:15px;
+position:fixed;
+top:50px;
+bottom:60px;
+left:0;
+right:0;
+overflow-y:auto;
+padding:10px;
 display:flex;
 flex-direction:column;
 gap:10px;
 }
 
+/* Message bubbles */
 .message{
-max-width:85%;
 padding:10px;
 border-radius:8px;
+max-width:80%;
 font-size:14px;
 white-space:pre-wrap;
 }
 
 .user{
 align-self:flex-end;
-background:var(--accent);
+background:#2563eb;
 }
 
 .ai{
 align-self:flex-start;
-background:var(--panel);
-border:1px solid var(--border);
+background:#1f2937;
 }
 
+/* Input bar */
 .input-area{
+position:fixed;
+bottom:0;
+left:0;
+right:0;
+height:60px;
+background:#111827;
 display:flex;
 padding:10px;
-border-top:1px solid var(--border);
-background:var(--bg);
+box-sizing:border-box;
 }
 
 textarea{
 flex:1;
 resize:none;
-padding:8px;
-border-radius:6px;
-border:1px solid var(--border);
-background:var(--panel);
-color:white;
-}
-
-.send{
-background:var(--accent);
 border:none;
-padding:8px 14px;
-margin-left:8px;
 border-radius:6px;
+padding:8px;
+background:#1f2937;
 color:white;
-cursor:pointer;
 }
 
-/* Settings Modal */
-.settings{
+button{
+margin-left:8px;
+border:none;
+border-radius:6px;
+padding:8px 14px;
+background:#2563eb;
+color:white;
+}
+
+/* Settings button */
+.settings-btn{
+position:fixed;
+top:10px;
+right:10px;
+background:#2563eb;
+padding:5px 10px;
+border-radius:6px;
+font-size:12px;
+}
+
+/* Modal */
+.modal{
 position:fixed;
 top:50%;
 left:50%;
 transform:translate(-50%,-50%);
-background:var(--panel);
+background:#1f2937;
 padding:20px;
-border:1px solid var(--border);
 border-radius:8px;
 display:none;
 flex-direction:column;
 gap:10px;
+z-index:20;
 width:280px;
-z-index:50;
 }
 
-.settings input{
+.modal input{
 padding:6px;
 border-radius:6px;
-border:1px solid var(--border);
-background:#0b1220;
+border:none;
+background:#111827;
 color:white;
-}
-
-/* Mobile */
-@media(max-width:768px){
-.sidebar{
-position:absolute;
-height:100%;
-z-index:20;
-}
-
-.menu-btn{
-display:block;
-}
 }
 </style>
 </head>
-
 <body>
 
-<button class="menu-btn" onclick="toggleSidebar()">☰</button>
-
-<div id="sidebar" class="sidebar hidden">
-<button onclick="createChat()">+ New Chat</button>
-<div id="chatList"></div>
-<button onclick="openSettings()">Settings</button>
-</div>
-
-<div class="main">
 <div class="header">ClutchByte AI</div>
+<button class="settings-btn" onclick="openSettings()">Settings</button>
+
 <div id="messages" class="messages"></div>
 
 <div class="input-area">
 <textarea id="input" rows="1" placeholder="Type message..."></textarea>
-<button class="send" onclick="send()">Send</button>
-</div>
+<button onclick="send()">Send</button>
 </div>
 
-<div id="settings" class="settings">
+<div id="modal" class="modal">
 <h3>Settings</h3>
 <input id="apiKey" placeholder="OpenRouter API Key">
-<input id="model" placeholder="Model">
+<input id="model" placeholder="Model" value="deepseek/deepseek-r1:free">
 <button onclick="saveSettings()">Save</button>
 <button onclick="closeSettings()">Close</button>
 </div>
 
 <script>
-let chats = JSON.parse(localStorage.getItem("cb_chats") || "[]");
-let current = localStorage.getItem("cb_current");
+let messages = JSON.parse(localStorage.getItem("cb_msgs") || "[]");
 
-if(!chats.length){
-  const first={id:Date.now(),title:"Chat 1",messages:[]};
-  chats.push(first);
-  current=first.id;
-  saveAll();
+function save(){
+localStorage.setItem("cb_msgs", JSON.stringify(messages));
 }
 
-function saveAll(){
-  localStorage.setItem("cb_chats",JSON.stringify(chats));
-  localStorage.setItem("cb_current",current);
-}
-
-function toggleSidebar(){
-  document.getElementById("sidebar").classList.toggle("hidden");
-}
-
-function createChat(){
-  const chat={id:Date.now(),title:"Chat "+(chats.length+1),messages:[]};
-  chats.unshift(chat);
-  current=chat.id;
-  saveAll();
-  renderChats();
-  renderMessages();
-}
-
-function renderChats(){
-  const list=document.getElementById("chatList");
-  list.innerHTML="";
-  chats.forEach(chat=>{
-    const div=document.createElement("div");
-    div.textContent=chat.title;
-    div.style.padding="8px";
-    div.style.cursor="pointer";
-    div.onclick=()=>{
-      current=chat.id;
-      saveAll();
-      renderMessages();
-      toggleSidebar();
-    };
-    list.appendChild(div);
-  });
-}
-
-function getCurrent(){
-  return chats.find(c=>c.id==current);
-}
-
-function renderMessages(){
-  const box=document.getElementById("messages");
-  box.innerHTML="";
-  const chat=getCurrent();
-  if(!chat) return;
-
-  chat.messages.forEach(m=>{
-    const div=document.createElement("div");
-    div.className="message "+m.role;
-    div.textContent=m.content;
-    box.appendChild(div);
-  });
-
-  box.scrollTop=box.scrollHeight;
+function render(){
+const box=document.getElementById("messages");
+box.innerHTML="";
+messages.forEach(m=>{
+const div=document.createElement("div");
+div.className="message "+m.role;
+div.textContent=m.content;
+box.appendChild(div);
+});
+box.scrollTop=box.scrollHeight;
 }
 
 async function send(){
-  const input=document.getElementById("input");
-  const text=input.value.trim();
-  if(!text) return;
+const input=document.getElementById("input");
+const text=input.value.trim();
+if(!text) return;
 
-  const chat=getCurrent();
-  chat.messages.push({role:"user",content:text});
-  input.value="";
-  renderMessages();
-  saveAll();
+messages.push({role:"user",content:text});
+input.value="";
+render();
+save();
 
-  const key=localStorage.getItem("cb_apiKey");
-  if(!key){
-    alert("Add API key in Settings");
-    return;
-  }
+const key=localStorage.getItem("cb_apiKey");
+if(!key){
+alert("Add API key in Settings");
+return;
+}
 
-  const aiMsg={role:"ai",content:"Thinking..."};
-  chat.messages.push(aiMsg);
-  renderMessages();
+const aiMsg={role:"ai",content:"Thinking..."};
+messages.push(aiMsg);
+render();
 
-  try{
-    const res=await fetch("https://openrouter.ai/api/v1/chat/completions",{
-      method:"POST",
-      headers:{
-        "Content-Type":"application/json",
-        "Authorization":"Bearer "+key
-      },
-      body:JSON.stringify({
-        model: localStorage.getItem("cb_model") || "deepseek/deepseek-r1:free",
-        messages: chat.messages.map(m=>({
-          role:m.role==="ai"?"assistant":m.role,
-          content:m.content
-        })),
-        stream:false
-      })
-    });
+try{
+const res=await fetch("https://openrouter.ai/api/v1/chat/completions",{
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+"Authorization":"Bearer "+key
+},
+body:JSON.stringify({
+model:localStorage.getItem("cb_model")||"deepseek/deepseek-r1:free",
+messages:messages.map(m=>({
+role:m.role==="ai"?"assistant":m.role,
+content:m.content
+})),
+stream:false
+})
+});
 
-    const data=await res.json();
-    aiMsg.content=data.choices?.[0]?.message?.content || "No response";
-    renderMessages();
-    saveAll();
+const data=await res.json();
+aiMsg.content=data.choices?.[0]?.message?.content||"No response";
+render();
+save();
 
-  }catch(e){
-    aiMsg.content="Connection Error";
-    renderMessages();
-  }
+}catch(e){
+aiMsg.content="Connection error";
+render();
+}
 }
 
 function openSettings(){
-  document.getElementById("settings").style.display="flex";
-  document.getElementById("apiKey").value=localStorage.getItem("cb_apiKey")||"";
-  document.getElementById("model").value=localStorage.getItem("cb_model")||"deepseek/deepseek-r1:free";
+document.getElementById("modal").style.display="flex";
+document.getElementById("apiKey").value=localStorage.getItem("cb_apiKey")||"";
+document.getElementById("model").value=localStorage.getItem("cb_model")||"deepseek/deepseek-r1:free";
 }
 
 function closeSettings(){
-  document.getElementById("settings").style.display="none";
+document.getElementById("modal").style.display="none";
 }
 
 function saveSettings(){
-  localStorage.setItem("cb_apiKey",document.getElementById("apiKey").value.trim());
-  localStorage.setItem("cb_model",document.getElementById("model").value.trim());
-  closeSettings();
+localStorage.setItem("cb_apiKey",document.getElementById("apiKey").value.trim());
+localStorage.setItem("cb_model",document.getElementById("model").value.trim());
+closeSettings();
 }
 
-renderChats();
-renderMessages();
+render();
 </script>
 
 </body>
