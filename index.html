@@ -1,131 +1,67 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ClutchByte AI Enterprise</title>
-
+<title>ClutchByte AI</title>
 <style>
 body {
-    margin: 0;
-    font-family: Arial, sans-serif;
-    background: #0f172a;
-    color: white;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
+  background: #111827;
+  color: white;
+  font-family: Arial;
+  margin: 0;
 }
-
-header {
-    padding: 15px;
-    background: #111827;
-    text-align: center;
-    font-size: 20px;
-    font-weight: bold;
-}
-
 #chat {
-    flex: 1;
-    padding: 20px;
-    overflow-y: auto;
+  height: 80vh;
+  overflow-y: auto;
+  padding: 20px;
 }
-
 .message {
-    margin-bottom: 15px;
-    padding: 10px 15px;
-    border-radius: 8px;
-    max-width: 80%;
+  margin-bottom: 10px;
 }
-
-.user {
-    background: #2563eb;
-    align-self: flex-end;
-}
-
-.bot {
-    background: #1f2937;
-    align-self: flex-start;
-}
-
-#input-area {
-    display: flex;
-    padding: 10px;
-    background: #111827;
-}
-
 input {
-    flex: 1;
-    padding: 12px;
-    border: none;
-    border-radius: 6px;
-    outline: none;
+  width: 80%;
+  padding: 10px;
 }
-
 button {
-    padding: 12px 18px;
-    margin-left: 10px;
-    border: none;
-    border-radius: 6px;
-    background: #2563eb;
-    color: white;
-    cursor: pointer;
-}
-
-button:hover {
-    background: #1d4ed8;
+  padding: 10px;
 }
 </style>
 </head>
-
 <body>
 
-<header>🚀 ClutchByte AI Enterprise</header>
+<h2 style="text-align:center;">🚀 ClutchByte AI</h2>
 
 <div id="chat"></div>
 
-<div id="input-area">
-    <input type="text" id="messageInput" placeholder="Type your message...">
-    <button onclick="sendMessage()">Send</button>
+<div style="padding:20px;">
+  <input id="msg" placeholder="Type message..." />
+  <button onclick="send()">Send</button>
 </div>
 
 <script>
+async function send() {
+  const input = document.getElementById("msg");
+  const text = input.value;
+  if (!text) return;
 
-const API_URL = "https://clutchbyte-ai.onrender.com/api/chat";
+  add("You: " + text);
+  input.value = "";
 
-async function sendMessage() {
-    const input = document.getElementById("messageInput");
-    const message = input.value.trim();
-    if (!message) return;
+  const res = await fetch("https://clutchbyte-ai.onrender.com/api/chat", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ message: text })
+  });
 
-    addMessage("user", message);
-    input.value = "";
-
-    try {
-        const response = await fetch(API_URL, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ message })
-        });
-
-        const data = await response.json();
-
-        addMessage("bot", data.reply || "No response from server");
-    } catch (error) {
-        addMessage("bot", "❌ Server Error");
-    }
+  const data = await res.json();
+  add("Bot: " + data.reply);
 }
 
-function addMessage(type, text) {
-    const chat = document.getElementById("chat");
-    const msg = document.createElement("div");
-    msg.classList.add("message", type);
-    msg.innerText = text;
-    chat.appendChild(msg);
-    chat.scrollTop = chat.scrollHeight;
+function add(text) {
+  const div = document.createElement("div");
+  div.className = "message";
+  div.innerText = text;
+  document.getElementById("chat").appendChild(div);
 }
-
 </script>
 
 </body>
