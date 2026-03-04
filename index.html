@@ -19,55 +19,54 @@
 body{
 background:var(--bg);
 color:var(--text);
-display:flex;
 height:100vh;
+display:flex;
 overflow:hidden;
 }
 
+/* Sidebar */
 .sidebar{
-width:230px;
+width:240px;
 background:#0b1220;
 border-right:1px solid var(--border);
 display:flex;
 flex-direction:column;
 padding:12px;
-overflow:auto;
+transition:.3s;
 }
 
-.sidebar button{
+.sidebar.hidden{
+transform:translateX(-100%);
+position:absolute;
+z-index:20;
+height:100%;
+}
+
+.menu-btn{
+display:none;
+position:absolute;
+top:10px;
+left:10px;
 background:var(--accent);
 border:none;
-padding:8px;
-margin-bottom:10px;
+padding:6px 10px;
 border-radius:6px;
 color:white;
-cursor:pointer;
+z-index:30;
 }
 
-.chat-item{
-padding:8px;
-cursor:pointer;
-border-radius:6px;
-font-size:14px;
-}
-
-.chat-item:hover{
-background:rgba(255,255,255,.08);
-}
-
-.active{
-background:rgba(37,99,235,.3);
-}
-
+/* Chat */
 .main{
 flex:1;
 display:flex;
 flex-direction:column;
+height:100%;
 }
 
 .header{
 padding:12px;
 border-bottom:1px solid var(--border);
+text-align:center;
 font-weight:bold;
 }
 
@@ -103,6 +102,7 @@ border:1px solid var(--border);
 display:flex;
 padding:10px;
 border-top:1px solid var(--border);
+background:var(--bg);
 }
 
 textarea{
@@ -125,6 +125,7 @@ color:white;
 cursor:pointer;
 }
 
+/* Settings Modal */
 .settings{
 position:fixed;
 top:50%;
@@ -137,8 +138,8 @@ border-radius:8px;
 display:none;
 flex-direction:column;
 gap:10px;
-width:300px;
-z-index:10;
+width:280px;
+z-index:50;
 }
 
 .settings input{
@@ -148,12 +149,27 @@ border:1px solid var(--border);
 background:#0b1220;
 color:white;
 }
+
+/* Mobile */
+@media(max-width:768px){
+.sidebar{
+position:absolute;
+height:100%;
+z-index:20;
+}
+
+.menu-btn{
+display:block;
+}
+}
 </style>
 </head>
 
 <body>
 
-<div class="sidebar">
+<button class="menu-btn" onclick="toggleSidebar()">☰</button>
+
+<div id="sidebar" class="sidebar hidden">
 <button onclick="createChat()">+ New Chat</button>
 <div id="chatList"></div>
 <button onclick="openSettings()">Settings</button>
@@ -172,7 +188,7 @@ color:white;
 <div id="settings" class="settings">
 <h3>Settings</h3>
 <input id="apiKey" placeholder="OpenRouter API Key">
-<input id="model" placeholder="Model Name">
+<input id="model" placeholder="Model">
 <button onclick="saveSettings()">Save</button>
 <button onclick="closeSettings()">Close</button>
 </div>
@@ -182,47 +198,43 @@ let chats = JSON.parse(localStorage.getItem("cb_chats") || "[]");
 let current = localStorage.getItem("cb_current");
 
 if(!chats.length){
-  const first = {id: Date.now(), title:"Chat 1", messages:[]};
+  const first={id:Date.now(),title:"Chat 1",messages:[]};
   chats.push(first);
-  current = first.id;
-  saveAll();
-}
-
-if(!current){
-  current = chats[0].id;
+  current=first.id;
   saveAll();
 }
 
 function saveAll(){
-  localStorage.setItem("cb_chats", JSON.stringify(chats));
-  localStorage.setItem("cb_current", current);
+  localStorage.setItem("cb_chats",JSON.stringify(chats));
+  localStorage.setItem("cb_current",current);
+}
+
+function toggleSidebar(){
+  document.getElementById("sidebar").classList.toggle("hidden");
 }
 
 function createChat(){
-  const newChat = {
-    id: Date.now(),
-    title: "Chat " + (chats.length+1),
-    messages:[]
-  };
-  chats.unshift(newChat);
-  current = newChat.id;
+  const chat={id:Date.now(),title:"Chat "+(chats.length+1),messages:[]};
+  chats.unshift(chat);
+  current=chat.id;
   saveAll();
   renderChats();
   renderMessages();
 }
 
 function renderChats(){
-  const list = document.getElementById("chatList");
+  const list=document.getElementById("chatList");
   list.innerHTML="";
   chats.forEach(chat=>{
     const div=document.createElement("div");
-    div.className="chat-item"+(chat.id==current?" active":"");
     div.textContent=chat.title;
+    div.style.padding="8px";
+    div.style.cursor="pointer";
     div.onclick=()=>{
       current=chat.id;
       saveAll();
-      renderChats();
       renderMessages();
+      toggleSidebar();
     };
     list.appendChild(div);
   });
@@ -238,12 +250,13 @@ function renderMessages(){
   const chat=getCurrent();
   if(!chat) return;
 
-  chat.messages.forEach(msg=>{
+  chat.messages.forEach(m=>{
     const div=document.createElement("div");
-    div.className="message "+msg.role;
-    div.textContent=msg.content;
+    div.className="message "+m.role;
+    div.textContent=m.content;
     box.appendChild(div);
   });
+
   box.scrollTop=box.scrollHeight;
 }
 
@@ -260,7 +273,7 @@ async function send(){
 
   const key=localStorage.getItem("cb_apiKey");
   if(!key){
-    alert("Add API key in settings");
+    alert("Add API key in Settings");
     return;
   }
 
@@ -278,8 +291,8 @@ async function send(){
       body:JSON.stringify({
         model: localStorage.getItem("cb_model") || "deepseek/deepseek-r1:free",
         messages: chat.messages.map(m=>({
-          role: m.role==="ai"?"assistant":m.role,
-          content: m.content
+          role:m.role==="ai"?"assistant":m.role,
+          content:m.content
         })),
         stream:false
       })
@@ -290,8 +303,8 @@ async function send(){
     renderMessages();
     saveAll();
 
-  }catch(err){
-    aiMsg.content="Error connecting to AI";
+  }catch(e){
+    aiMsg.content="Connection Error";
     renderMessages();
   }
 }
@@ -307,8 +320,8 @@ function closeSettings(){
 }
 
 function saveSettings(){
-  localStorage.setItem("cb_apiKey", document.getElementById("apiKey").value.trim());
-  localStorage.setItem("cb_model", document.getElementById("model").value.trim());
+  localStorage.setItem("cb_apiKey",document.getElementById("apiKey").value.trim());
+  localStorage.setItem("cb_model",document.getElementById("model").value.trim());
   closeSettings();
 }
 
