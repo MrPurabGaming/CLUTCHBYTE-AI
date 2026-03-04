@@ -1,240 +1,340 @@
 <!DOCTYPE html>
-<html lang="en" class="h-full">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Universal AI</title>
+<title>Universal AI – Premium Pro Max</title>
 
-<!-- ✅ Stable Tailwind CSS (NO JS CDN) -->
-<link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet">
-
-<!-- Marked.js -->
+<!-- Markdown -->
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
 <style>
-html, body { height:100%; }
-.dark { background-color:#18181b; }
-.dark .dark\:bg-zinc-800 { background-color:#27272a; }
-.dark .dark\:bg-zinc-700 { background-color:#3f3f46; }
-.dark .dark\:border-zinc-700 { border-color:#3f3f46; }
-.dark .dark\:text-black { color:black; }
-.dark .dark\:bg-white { background:white; }
+:root{
+  --bg:#f6f7fb;
+  --panel:rgba(255,255,255,.75);
+  --border:#e5e7eb;
+  --text:#111827;
+  --muted:#6b7280;
+  --user:#2563eb;
+  --ai:#f1f3f5;
+  --glass:blur(18px);
+}
+body.dark{
+  --bg:#0f172a;
+  --panel:rgba(17,24,39,.65);
+  --border:#1f2937;
+  --text:#f3f4f6;
+  --muted:#9ca3af;
+  --user:#3b82f6;
+  --ai:#1f2937;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:system-ui,-apple-system}
+body{
+  background:linear-gradient(135deg,#eef2ff,#f8fafc);
+  height:100vh;
+  color:var(--text);
+  display:flex;
+  overflow:hidden;
+}
+body.dark{
+  background:linear-gradient(135deg,#0f172a,#1e293b);
+}
+.sidebar{
+  width:280px;
+  backdrop-filter:var(--glass);
+  background:var(--panel);
+  border-right:1px solid var(--border);
+  display:flex;
+  flex-direction:column;
+  position:fixed;
+  height:100%;
+  transform:translateX(-100%);
+  transition:.3s ease;
+  z-index:20;
+}
+.sidebar.open{transform:translateX(0)}
+@media(min-width:768px){
+  .sidebar{transform:none;position:relative}
+  .main{margin-left:280px}
+}
+.sidebar h2{
+  padding:18px;
+  font-weight:600;
+  border-bottom:1px solid var(--border);
+}
+.sidebar button{
+  margin:8px 16px;
+  padding:10px;
+  border-radius:12px;
+  border:none;
+  cursor:pointer;
+  font-weight:500;
+  background:var(--user);
+  color:#fff;
+}
+.chat-item{
+  padding:10px 16px;
+  font-size:14px;
+  cursor:pointer;
+  color:var(--muted);
+}
+.chat-item:hover{
+  background:rgba(0,0,0,.05);
+}
+.main{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  width:100%;
+}
+header{
+  backdrop-filter:var(--glass);
+  background:var(--panel);
+  border-bottom:1px solid var(--border);
+  padding:14px 18px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+header h1{
+  font-size:15px;
+  font-weight:600;
+}
+.messages{
+  flex:1;
+  overflow:auto;
+  padding:30px 16px;
+  display:flex;
+  flex-direction:column;
+  gap:20px;
+}
+.message{
+  max-width:860px;
+  width:100%;
+  margin:auto;
+}
+.bubble{
+  padding:16px 20px;
+  border-radius:20px;
+  font-size:15px;
+  line-height:1.6;
+  box-shadow:0 5px 20px rgba(0,0,0,.04);
+}
+.user{
+  display:flex;
+  justify-content:flex-end;
+}
+.user .bubble{
+  background:var(--user);
+  color:#fff;
+}
+.ai{
+  display:flex;
+  justify-content:flex-start;
+}
+.ai .bubble{
+  background:var(--ai);
+}
+.inputbar{
+  backdrop-filter:var(--glass);
+  background:var(--panel);
+  border-top:1px solid var(--border);
+  padding:14px;
+  display:flex;
+  gap:10px;
+}
+textarea{
+  flex:1;
+  resize:none;
+  border-radius:16px;
+  padding:14px;
+  border:1px solid var(--border);
+  font-size:15px;
+  outline:none;
+  background:transparent;
+  color:var(--text);
+}
+.send{
+  background:var(--user);
+  border:none;
+  color:white;
+  padding:0 22px;
+  border-radius:16px;
+  cursor:pointer;
+  font-weight:500;
+}
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.6);
+  display:none;
+  align-items:center;
+  justify-content:center;
+}
+.modal.show{display:flex}
+.modal-box{
+  backdrop-filter:var(--glass);
+  background:var(--panel);
+  padding:22px;
+  border-radius:20px;
+  width:92%;
+  max-width:480px;
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+input,select{
+  padding:10px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  background:transparent;
+  color:var(--text);
+}
+.counter{
+  font-size:12px;
+  color:var(--muted);
+  text-align:right;
+  margin-top:4px;
+}
 </style>
 </head>
 
-<body class="bg-gray-100 transition-colors duration-300">
+<body>
 
-<div id="loading" class="flex items-center justify-center min-h-screen text-lg font-semibold">
-Loading App...
+<div id="sidebar" class="sidebar">
+<h2>Chats</h2>
+<button onclick="createChat()">+ New Chat</button>
+<div id="chatList" style="flex:1;overflow:auto"></div>
+<button onclick="openSettings()">⚙ Settings</button>
+<button onclick="toggleDark()">🌙 Dark Mode</button>
 </div>
 
-<div id="app" class="hidden min-h-screen flex">
-
-<!-- Sidebar -->
-<aside id="sidebar"
-class="fixed md:relative z-40 w-72 bg-white border-r border-gray-200
-flex flex-col transform -translate-x-full md:translate-x-0 transition-transform duration-300">
-
-<div class="p-4 border-b flex justify-between items-center">
-<h2 class="font-bold">Chats</h2>
-<button id="closeSidebar" class="md:hidden text-xl">✕</button>
-</div>
-
-<button id="newChatBtn"
-class="m-4 bg-black text-white py-2 rounded-lg">
-+ New Chat
-</button>
-
-<div id="chatList" class="flex-1 overflow-y-auto px-2 space-y-1"></div>
-
-<div class="p-4 border-t space-y-2">
-<button id="settingsBtn" class="w-full text-left">⚙ Settings</button>
-<button id="systemPromptBtn" class="w-full text-left">🧠 System Prompt</button>
-<button id="darkToggle" class="w-full text-left">🌙 Toggle Dark Mode</button>
-</div>
-</aside>
-
-<!-- Main -->
-<div class="flex-1 flex flex-col w-full">
-
-<header class="flex items-center justify-between p-4 border-b bg-white">
-<button id="openSidebar" class="md:hidden text-xl">☰</button>
-<h1 class="font-semibold">Universal AI</h1>
-<div></div>
+<div class="main">
+<header>
+<button onclick="toggleSidebar()">☰</button>
+<h1 id="chatTitle">Universal AI</h1>
+<span id="tokenCounter" class="counter"></span>
 </header>
 
-<main id="messages" class="flex-1 overflow-y-auto p-4 space-y-4"></main>
+<div id="messages" class="messages"></div>
 
-<div class="sticky bottom-0 bg-white border-t p-3">
-<div class="flex gap-2">
-<textarea id="messageInput" rows="1"
-placeholder="Message AI..."
-class="flex-1 resize-none rounded-lg border p-2"></textarea>
-<button id="sendBtn"
-class="bg-black text-white px-4 rounded-lg">
-Send
-</button>
+<div class="inputbar">
+<textarea id="input" rows="1" placeholder="Message AI..."></textarea>
+<button class="send" onclick="send()">Send</button>
 </div>
 </div>
 
-</div>
-</div>
-
-<!-- Settings Modal -->
-<div id="settingsModal"
-class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4">
-<div class="bg-white p-6 rounded-xl w-full max-w-md space-y-4">
-<h2 class="text-lg font-bold">Settings</h2>
-
-<input id="apiKeyInput" type="password"
-placeholder="OpenRouter API Key"
-class="w-full border p-2 rounded">
-
-<input id="modelInput" type="text"
-value="deepseek/deepseek-r1:free"
-class="w-full border p-2 rounded">
-
-<div class="flex justify-end gap-2">
-<button id="closeSettings">Cancel</button>
-<button id="saveSettings"
-class="bg-black text-white px-4 py-2 rounded">
-Save
-</button>
-</div>
-</div>
-</div>
-
-<!-- System Prompt Modal -->
-<div id="systemModal"
-class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4">
-<div class="bg-white p-6 rounded-xl w-full max-w-md space-y-4">
-<h2 class="text-lg font-bold">System Prompt</h2>
-
-<textarea id="systemPromptInput"
-rows="5"
-class="w-full border p-2 rounded"></textarea>
-
-<div class="flex justify-end gap-2">
-<button id="closeSystem">Cancel</button>
-<button id="saveSystem"
-class="bg-black text-white px-4 py-2 rounded">
-Save
-</button>
+<div id="settingsModal" class="modal">
+<div class="modal-box">
+<h3>Settings</h3>
+<input id="apiKey" placeholder="OpenRouter API Key">
+<select id="model">
+<option value="deepseek/deepseek-r1:free">DeepSeek R1</option>
+<option value="openai/gpt-3.5-turbo">GPT-3.5</option>
+<option value="mistralai/mistral-7b-instruct">Mistral 7B</option>
+</select>
+<input id="systemPrompt" placeholder="Global System Prompt (optional)">
+<div style="display:flex;justify-content:end;gap:10px">
+<button onclick="closeSettings()">Cancel</button>
+<button onclick="saveSettings()" class="send">Save</button>
 </div>
 </div>
 </div>
 
 <script>
-(function(){
-
-const app = document.getElementById("app");
-const loading = document.getElementById("loading");
-const messagesEl = document.getElementById("messages");
-const input = document.getElementById("messageInput");
-
-let chats = JSON.parse(localStorage.getItem("chats")||"[]");
-let currentChatId = localStorage.getItem("currentChatId");
+let chats=JSON.parse(localStorage.getItem("pro_chats")||"[]");
+let current=localStorage.getItem("pro_current");
 
 if(!chats.length) createChat();
 
-function save(){localStorage.setItem("chats",JSON.stringify(chats));}
-
-function createChat(){
-const chat={id:Date.now(),title:"New Chat",messages:[],system:""};
-chats.unshift(chat);
-currentChatId=chat.id;
-save();
-renderChats();
-renderMessages();
+function save(){
+localStorage.setItem("pro_chats",JSON.stringify(chats));
+localStorage.setItem("pro_current",current);
 }
 
-function current(){return chats.find(c=>c.id==currentChatId);}
+function createChat(){
+const chat={id:Date.now(),title:"New Chat",messages:[]};
+chats.unshift(chat);
+current=chat.id;
+save();renderChats();render();
+}
 
 function renderChats(){
 const list=document.getElementById("chatList");
 list.innerHTML="";
-chats.forEach(chat=>{
+chats.forEach(c=>{
 const div=document.createElement("div");
-div.className="p-2 rounded cursor-pointer hover:bg-gray-200";
-div.innerHTML=`<div class="flex justify-between items-center">
-<span>${chat.title}</span>
-<button onclick="deleteChat(${chat.id})">🗑</button>
-</div>`;
-div.onclick=()=>{
-currentChatId=chat.id;
-localStorage.setItem("currentChatId",chat.id);
-renderMessages();
-};
+div.className="chat-item";
+div.textContent=c.title;
+div.onclick=()=>{current=c.id;save();render()};
 list.appendChild(div);
 });
 }
 
-window.deleteChat=function(id){
-chats=chats.filter(c=>c.id!=id);
-currentChatId=chats[0]?.id;
-save();
-renderChats();
-renderMessages();
-}
+function getCurrent(){return chats.find(c=>c.id==current)}
 
-function renderMessages(){
-const chat=current();
-messagesEl.innerHTML="";
+function render(){
+const chat=getCurrent();
 if(!chat)return;
-
+document.getElementById("chatTitle").textContent=chat.title;
+const box=document.getElementById("messages");
+box.innerHTML="";
+let tokens=0;
 chat.messages.forEach(m=>{
+tokens+=m.content.length;
 const wrap=document.createElement("div");
-wrap.className=m.role==="user"?"text-right":"text-left";
-
+wrap.className="message "+m.role;
 const bubble=document.createElement("div");
-bubble.className="inline-block max-w-xl p-3 rounded-xl "+
-(m.role==="user"?"bg-black text-white":"bg-gray-200");
-
+bubble.className="bubble";
 bubble.innerHTML=marked.parse(m.content);
 wrap.appendChild(bubble);
-messagesEl.appendChild(wrap);
+box.appendChild(wrap);
 });
-messagesEl.scrollTop=messagesEl.scrollHeight;
+document.getElementById("tokenCounter").textContent="Tokens ~ "+Math.floor(tokens/4);
+box.scrollTop=box.scrollHeight;
 }
 
 async function send(){
+const input=document.getElementById("input");
 const text=input.value.trim();
 if(!text)return;
-
-const chat=current();
+const chat=getCurrent();
 chat.messages.push({role:"user",content:text});
 input.value="";
-renderMessages();
-save();
+render();save();
 
 const key=localStorage.getItem("apiKey");
-if(!key){alert("Set API key");return;}
+if(!key){alert("Add API key");return;}
 
 const ai={role:"assistant",content:""};
 chat.messages.push(ai);
-renderMessages();
+render();
 
-const response=await fetch("https://openrouter.ai/api/v1/chat/completions",{
+const res=await fetch("https://openrouter.ai/api/v1/chat/completions",{
 method:"POST",
 headers:{
 "Content-Type":"application/json",
 "Authorization":"Bearer "+key
 },
 body:JSON.stringify({
-model:localStorage.getItem("model")||"deepseek/deepseek-r1:free",
+model:document.getElementById("model").value,
 stream:true,
-messages:chat.messages
+messages:[
+...(localStorage.getItem("systemPrompt")
+?[{role:"system",content:localStorage.getItem("systemPrompt")}]
+:[]),
+...chat.messages
+]
 })
 });
 
-const reader=response.body.getReader();
+const reader=res.body.getReader();
 const decoder=new TextDecoder();
 
 while(true){
 const {value,done}=await reader.read();
 if(done)break;
-const chunk=decoder.decode(value);
-chunk.split("\n").forEach(line=>{
+decoder.decode(value).split("\n").forEach(line=>{
 if(line.startsWith("data: ")){
 const data=line.replace("data: ","");
 if(data==="[DONE]")return;
@@ -243,8 +343,7 @@ const json=JSON.parse(data);
 const token=json.choices?.[0]?.delta?.content;
 if(token){
 ai.content+=token;
-renderMessages();
-save();
+render();save();
 }
 }catch{}
 }
@@ -252,48 +351,26 @@ save();
 }
 }
 
-document.getElementById("sendBtn").onclick=send;
-input.addEventListener("keydown",e=>{
-if(e.key==="Enter"&&!e.shiftKey){
-e.preventDefault();send();
+function toggleSidebar(){
+document.getElementById("sidebar").classList.toggle("open");
 }
-});
-
-document.getElementById("newChatBtn").onclick=createChat;
-
-document.getElementById("settingsBtn").onclick=
-()=>document.getElementById("settingsModal").classList.remove("hidden");
-
-document.getElementById("closeSettings").onclick=
-()=>document.getElementById("settingsModal").classList.add("hidden");
-
-document.getElementById("saveSettings").onclick=()=>{
-localStorage.setItem("apiKey",document.getElementById("apiKeyInput").value);
-localStorage.setItem("model",document.getElementById("modelInput").value);
-document.getElementById("settingsModal").classList.add("hidden");
-};
-
-document.getElementById("darkToggle").onclick=()=>{
+function openSettings(){
+document.getElementById("settingsModal").classList.add("show");
+}
+function closeSettings(){
+document.getElementById("settingsModal").classList.remove("show");
+}
+function saveSettings(){
+localStorage.setItem("apiKey",document.getElementById("apiKey").value);
+localStorage.setItem("systemPrompt",document.getElementById("systemPrompt").value);
+closeSettings();
+}
+function toggleDark(){
 document.body.classList.toggle("dark");
-localStorage.setItem("dark",document.body.classList.contains("dark"));
-};
-
-if(localStorage.getItem("dark")==="true")
-document.body.classList.add("dark");
-
-document.getElementById("openSidebar").onclick=
-()=>document.getElementById("sidebar").classList.remove("-translate-x-full");
-
-document.getElementById("closeSidebar").onclick=
-()=>document.getElementById("sidebar").classList.add("-translate-x-full");
+}
 
 renderChats();
-renderMessages();
-
-loading.style.display="none";
-app.classList.remove("hidden");
-
-})();
+render();
 </script>
 
 </body>
