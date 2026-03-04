@@ -6,99 +6,108 @@
     <title>ClutchByte AI - Enterprise</title>
     <script src="https://cdn.tailwindcss.com?plugins=typography,forms"></script>
     
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+    
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
     
     <style>
-        .glass { background: rgba(32, 33, 35, 0.9); backdrop-filter: blur(12px); }
         .sidebar-scroll::-webkit-scrollbar { width: 4px; }
         .sidebar-scroll::-webkit-scrollbar-thumb { background: #444654; border-radius: 10px; }
+        .main-scroll::-webkit-scrollbar { width: 6px; }
+        .main-scroll::-webkit-scrollbar-thumb { background: #565869; border-radius: 4px; }
+        .glass { background: rgba(15, 15, 15, 0.85); backdrop-filter: blur(15px); }
+        body { background-color: #343541; }
+        
+        /* Markdown formatting for AI bubbles */
+        .prose pre { background-color: #000 !important; padding: 1rem; border-radius: 0.5rem; }
+        .prose code { color: #e5e7eb; background-color: rgba(255,255,255,0.1); padding: 0.1rem 0.3rem; border-radius: 0.2rem; }
+        .prose pre code { background-color: transparent; padding: 0; }
     </style>
 </head>
-<body class="bg-[#343541] text-white overflow-hidden h-screen font-sans">
+<body class="text-white overflow-hidden h-[100dvh] flex flex-col md:flex-row transition-all duration-300">
 
     <div id="auth-screen" class="fixed inset-0 z-[100] bg-[#202123] flex items-center justify-center p-4">
-        <div class="w-full max-w-md bg-[#343541] p-8 rounded-2xl border border-gray-700 shadow-2xl">
-            <h2 id="auth-title" class="text-2xl font-bold text-center mb-6">ClutchByte AI</h2>
+        <div class="w-full max-w-md bg-[#2d2d39] p-8 rounded-2xl border border-gray-700 shadow-2xl">
+            <div class="flex flex-col items-center mb-8">
+                <div class="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mb-3 font-bold text-2xl shadow-lg shadow-green-900/50">C</div>
+                <h2 id="auth-title" class="text-2xl font-bold">ClutchByte AI</h2>
+            </div>
             <div class="space-y-4">
-                <input type="email" id="auth-email" placeholder="Email Address" class="w-full bg-[#40414F] border border-gray-600 p-3 rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
-                <input type="password" id="auth-pass" placeholder="Password" class="w-full bg-[#40414F] border border-gray-600 p-3 rounded-lg focus:ring-2 focus:ring-green-500 outline-none">
-                <button onclick="handleAuth()" id="auth-btn" class="w-full bg-green-600 hover:bg-green-700 p-3 rounded-lg font-bold transition-all">Log In</button>
-                <p class="text-sm text-center text-gray-400">
-                    <span id="auth-toggle-text">New here?</span> 
-                    <button onclick="toggleAuthMode()" class="text-green-500 hover:underline">Create Account</button>
-                </p>
+                <input type="email" id="auth-email" placeholder="Email Address" class="w-full bg-[#40414F] border border-gray-600 p-3 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm">
+                <input type="password" id="auth-pass" placeholder="Password" class="w-full bg-[#40414F] border border-gray-600 p-3 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm">
+                <button onclick="handleAuth()" id="auth-btn" class="w-full bg-green-600 hover:bg-green-700 p-3 rounded-lg font-bold transition-all shadow-lg shadow-green-900/20">Log In</button>
+                <button onclick="toggleAuthMode()" class="w-full text-xs text-gray-400 hover:text-green-500 transition-colors uppercase tracking-widest font-semibold" id="auth-toggle-btn">Create New Account</button>
             </div>
         </div>
     </div>
 
-    <div id="main-app" class="hidden flex h-full">
-        <aside class="w-[260px] bg-[#202123] flex flex-col border-r border-white/10">
-            <div class="p-4">
-                <button onclick="location.reload()" class="w-full border border-white/20 p-3 rounded-md hover:bg-gray-800 text-sm flex items-center gap-3">
-                    <span>+</span> New Chat
+    <div id="main-app" class="hidden flex flex-1 overflow-hidden h-full">
+        <aside class="w-full md:w-[260px] bg-[#202123] flex flex-col border-r border-white/10 h-full fixed md:relative z-40 -translate-x-full md:translate-x-0 transition-transform" id="sidebar">
+            <div class="p-3">
+                <button onclick="clearChat()" class="w-full border border-white/20 p-3 rounded-md hover:bg-gray-800 text-sm flex items-center gap-3 transition-colors">
+                    <span class="text-lg">+</span> New Chat
                 </button>
             </div>
-            <div id="chat-list" class="flex-1 overflow-y-auto sidebar-scroll p-2"></div>
-            
-            <div class="p-2 border-t border-white/10 space-y-1">
+            <div id="chat-list" class="flex-1 overflow-y-auto sidebar-scroll p-2 space-y-1">
+                </div>
+            <div class="p-2 border-t border-white/10 space-y-1 bg-[#202123]">
                 <div id="admin-btn-container"></div>
-                <button onclick="auth.signOut()" class="w-full p-3 hover:bg-red-900/20 text-red-400 rounded-md text-sm text-left">Logout</button>
+                <button onclick="auth.signOut()" class="w-full p-3 hover:bg-red-900/20 text-red-400 rounded-md text-sm text-left flex items-center gap-2">
+                    Logout
+                </button>
             </div>
         </aside>
 
-        <main class="flex-1 flex flex-col relative">
-            <header class="h-14 border-b border-white/10 flex items-center px-4 justify-between bg-[#343541]">
+        <main class="flex-1 flex flex-col relative bg-[#343541]">
+            <header class="h-14 border-b border-white/10 flex items-center px-4 justify-between bg-[#343541]/80 backdrop-blur-sm z-30">
+                <button class="md:hidden p-2 text-gray-400" onclick="document.getElementById('sidebar').classList.toggle('-translate-x-full')">☰</button>
                 <div class="flex items-center gap-4">
-                    <span class="text-xs font-bold text-gray-400">MODEL</span>
-                    <select id="model-select" class="bg-transparent border-none text-sm font-bold focus:ring-0 cursor-pointer">
-                        <option value="groq:llama-3.3-70b">Llama 3.3 70B</option>
-                        <option value="google:gemini-1.5-flash">Gemini Flash</option>
+                    <select id="model-select" class="bg-transparent border-none text-sm font-bold focus:ring-0 cursor-pointer text-gray-200">
+                        <option value="groq:llama-3.3-70b-versatile">Llama 3.3 70B (Groq)</option>
+                        <option value="google:gemini-1.5-flash">Gemini 1.5 Flash</option>
                     </select>
                 </div>
-                <div id="user-credits" class="text-xs bg-gray-800 px-3 py-1 rounded-full text-green-400 font-mono">Tokens: 0</div>
+                <div id="user-credits" class="text-[10px] font-bold bg-green-500/10 border border-green-500/30 px-3 py-1 rounded-full text-green-400">TOKENS: 0</div>
             </header>
 
-            <div id="chat-window" class="flex-1 overflow-y-auto p-4 space-y-6 pb-32">
-                <div class="h-full flex flex-col items-center justify-center opacity-20">
-                    <h1 class="text-4xl font-bold">ClutchByte AI</h1>
+            <div id="chat-window" class="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 pb-32 main-scroll">
+                <div id="welcome-screen" class="max-w-2xl mx-auto h-full flex flex-col items-center justify-center text-center opacity-20">
+                    <div class="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mb-4 font-bold text-3xl">C</div>
+                    <h1 class="text-3xl font-bold">ClutchByte AI</h1>
+                    <p class="text-sm mt-2">Enterprise Intelligence Platform</p>
                 </div>
             </div>
 
-            <div class="absolute bottom-0 w-full p-4 bg-gradient-to-t from-[#343541]">
-                <div class="max-w-3xl mx-auto flex items-end bg-[#40414F] rounded-xl border border-white/10 p-2">
-                    <textarea id="user-input" rows="1" class="flex-1 bg-transparent border-none focus:ring-0 text-white p-2 resize-none" placeholder="Ask anything..."></textarea>
-                    <button id="send-btn" class="p-2 text-green-500 hover:text-white transition-colors">➤</button>
+            <div class="absolute bottom-0 w-full p-4 bg-gradient-to-t from-[#343541] via-[#343541]">
+                <div class="max-w-3xl mx-auto flex items-end bg-[#40414F] rounded-xl border border-white/10 p-1.5 shadow-2xl">
+                    <textarea id="user-input" rows="1" class="flex-1 bg-transparent border-none focus:ring-0 text-white p-3 resize-none text-sm" placeholder="Send a message..."></textarea>
+                    <button id="send-btn" class="p-3 bg-green-600 rounded-lg text-white hover:bg-green-700 transition-all m-1 disabled:opacity-50">➤</button>
                 </div>
             </div>
         </main>
     </div>
 
     <div id="admin-panel" class="hidden fixed inset-0 z-[110] glass flex items-center justify-center p-4">
-        <div class="w-full max-w-4xl bg-[#202123] rounded-2xl border border-gray-700 h-[80vh] flex flex-col shadow-2xl">
-            <div class="p-6 border-b border-gray-700 flex justify-between items-center">
-                <h2 class="text-xl font-bold">Admin Management</h2>
-                <button onclick="closeAdmin()" class="text-gray-400 hover:text-white text-3xl">&times;</button>
+        <div class="w-full max-w-4xl bg-[#171717] rounded-2xl border border-gray-700 h-[80vh] flex flex-col shadow-3xl overflow-hidden">
+            <div class="p-6 border-b border-gray-800 flex justify-between items-center bg-[#202123]">
+                <div><h2 class="text-xl font-bold text-green-500">Master Control</h2></div>
+                <button onclick="document.getElementById('admin-panel').classList.add('hidden')" class="text-white">&times;</button>
             </div>
             <div class="flex-1 overflow-y-auto p-6">
-                <table class="w-full text-left border-collapse">
-                    <thead>
-                        <tr class="text-gray-400 text-xs uppercase border-b border-gray-800">
-                            <th class="p-3">User</th>
-                            <th class="p-3">Role</th>
-                            <th class="p-3">Tokens</th>
-                            <th class="p-3">Manage</th>
-                        </tr>
-                    </thead>
-                    <tbody id="admin-user-table"></tbody>
+                <table class="w-full text-left">
+                    <thead><tr class="text-gray-500 text-[10px] uppercase border-b border-gray-800 tracking-wider"><th class="p-4">User</th><th class="p-4">Role</th><th class="p-4">Tokens</th><th class="p-4">Manage</th></tr></thead>
+                    <tbody id="admin-user-table" class="divide-y divide-gray-800"></tbody>
                 </table>
             </div>
         </div>
     </div>
 
     <script>
-        // Paste your exact config here
+        // --- 1. SYSTEM CONFIGURATION ---
+        // TODO: Paste your Firebase Config here
         const firebaseConfig = {
             apiKey: "AIzaSyAOMe1cI94JC-R9MA8PXsQBT7hEJ7NZJpE",
             authDomain: "clutchbyte-ai.firebaseapp.com",
@@ -108,16 +117,28 @@
             appId: "1:75426564085:web:d607240f2e0dedb24302bc"
         };
         
+        // TODO: Add your AI API Keys here to make the bot actually reply
+        const AI_KEYS = {
+            groq: "YOUR_GROQ_API_KEY_HERE",
+            google: "YOUR_GEMINI_API_KEY_HERE"
+        };
+
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
 
-        let isLoginMode = true;
+        let currentUserDoc = null;
+        let currentUserId = null;
+        let currentTokens = 0;
+        let isGenerating = false;
 
+        // --- 2. AUTHENTICATION ---
+        let isLoginMode = true;
         function toggleAuthMode() {
             isLoginMode = !isLoginMode;
-            document.getElementById('auth-title').innerText = isLoginMode ? "ClutchByte AI" : "Create Account";
+            document.getElementById('auth-title').innerText = isLoginMode ? "ClutchByte AI" : "Get Started";
             document.getElementById('auth-btn').innerText = isLoginMode ? "Log In" : "Register";
+            document.getElementById('auth-toggle-btn').innerText = isLoginMode ? "Create New Account" : "Already have an account?";
         }
 
         async function handleAuth() {
@@ -129,38 +150,165 @@
                 } else {
                     const res = await auth.createUserWithEmailAndPassword(email, pass);
                     await db.collection('users').doc(res.user.uid).set({
-                        email: email,
-                        role: 'user',
-                        tokens: 1000,
-                        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                        email: email, role: 'user', tokens: 10000, createdAt: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 }
             } catch (err) { alert(err.message); }
         }
 
-        auth.onAuthStateChanged(async user => {
+        auth.onAuthStateChanged(user => {
             if (user) {
+                currentUserId = user.uid;
                 document.getElementById('auth-screen').classList.add('hidden');
                 document.getElementById('main-app').classList.remove('hidden');
                 
-                // Real-time listener for user data (credits/role)
+                // Real-time token tracking listener
                 db.collection('users').doc(user.uid).onSnapshot(doc => {
                     if (doc.exists) {
                         const data = doc.data();
-                        document.getElementById('user-credits').innerText = `Tokens: ${data.tokens.toLocaleString()}`;
+                        currentTokens = data.tokens;
+                        document.getElementById('user-credits').innerText = `TOKENS: ${currentTokens.toLocaleString()}`;
+                        
                         if (data.role === 'admin') {
-                            document.getElementById('admin-btn-container').innerHTML = `
-                                <button onclick="openAdmin()" class="w-full p-3 bg-green-900/20 text-green-400 rounded-md text-sm text-left font-bold mb-2 border border-green-900/50">🛡️ Admin Panel</button>
-                            `;
+                            document.getElementById('admin-btn-container').innerHTML = `<button onclick="openAdmin()" class="w-full p-3 bg-green-500/10 text-green-500 rounded-md text-xs text-left font-bold mb-2 border border-green-500/20 uppercase tracking-widest">🛡️ Admin Panel</button>`;
                         }
                     }
                 });
             } else {
+                currentUserId = null;
                 document.getElementById('auth-screen').classList.remove('hidden');
                 document.getElementById('main-app').classList.add('hidden');
             }
         });
 
+        // --- 3. CHAT INTERFACE LOGIC ---
+        const chatWindow = document.getElementById('chat-window');
+        const userInputBox = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        let conversationHistory = [];
+
+        function clearChat() {
+            conversationHistory = [];
+            chatWindow.innerHTML = `
+                <div id="welcome-screen" class="max-w-2xl mx-auto h-full flex flex-col items-center justify-center text-center opacity-20">
+                    <div class="w-16 h-16 bg-white/10 rounded-2xl flex items-center justify-center mb-4 font-bold text-3xl">C</div>
+                    <h1 class="text-3xl font-bold">ClutchByte AI</h1>
+                    <p class="text-sm mt-2">Enterprise Intelligence Platform</p>
+                </div>
+            `;
+        }
+
+        function appendMessage(role, text) {
+            const welcome = document.getElementById('welcome-screen');
+            if (welcome) welcome.remove();
+
+            const div = document.createElement('div');
+            div.className = `flex w-full ${role === 'user' ? 'justify-end' : 'justify-start'} mb-6`;
+            
+            const bubble = document.createElement('div');
+            if (role === 'user') {
+                bubble.className = "bg-[#40414F] text-white px-5 py-3 rounded-2xl rounded-tr-sm max-w-[85%] text-sm";
+                bubble.textContent = text;
+            } else {
+                bubble.className = "text-gray-100 px-5 py-3 rounded-2xl rounded-tl-sm max-w-[85%] prose prose-invert prose-sm break-words";
+                // Convert Markdown to HTML securely
+                bubble.innerHTML = DOMPurify.sanitize(marked.parse(text));
+            }
+
+            div.appendChild(bubble);
+            chatWindow.appendChild(div);
+            chatWindow.scrollTo(0, chatWindow.scrollHeight);
+            return bubble; // Return element so we can update it if streaming later
+        }
+
+        async function handleSend() {
+            const text = userInputBox.value.trim();
+            if (!text || isGenerating) return;
+
+            // 1. Check Tokens
+            const COST_PER_MESSAGE = 100; // Deduct 100 tokens per message sent
+            if (currentTokens < COST_PER_MESSAGE) {
+                alert("You do not have enough tokens. Please contact an Administrator.");
+                return;
+            }
+
+            // 2. Setup UI
+            userInputBox.value = '';
+            userInputBox.style.height = 'auto';
+            isGenerating = true;
+            sendBtn.classList.add('opacity-50');
+            
+            appendMessage('user', text);
+            conversationHistory.push({ role: "user", content: text });
+            
+            // Deduct tokens instantly in Firebase
+            await db.collection('users').doc(currentUserId).update({
+                tokens: firebase.firestore.FieldValue.increment(-COST_PER_MESSAGE)
+            });
+
+            // Loading state for Bot
+            const botBubble = appendMessage('bot', '...');
+
+            // 3. Make API Call
+            try {
+                const modelSelection = document.getElementById('model-select').value;
+                const [provider, modelName] = modelSelection.split(':');
+                
+                let responseText = "";
+
+                if (provider === 'groq') {
+                    const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                        method: 'POST',
+                        headers: { 'Authorization': `Bearer ${AI_KEYS.groq}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ model: modelName, messages: conversationHistory })
+                    });
+                    const data = await res.json();
+                    if(data.error) throw new Error(data.error.message);
+                    responseText = data.choices[0].message.content;
+                } 
+                else if (provider === 'google') {
+                    // Google Gemini API Formatting
+                    const geminiMessages = conversationHistory.map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content }] }));
+                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${AI_KEYS.google}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: geminiMessages })
+                    });
+                    const data = await res.json();
+                    if(data.error) throw new Error(data.error.message);
+                    responseText = data.candidates[0].content.parts[0].text;
+                }
+
+                // Update UI with final response
+                botBubble.innerHTML = DOMPurify.sanitize(marked.parse(responseText));
+                conversationHistory.push({ role: "assistant", content: responseText });
+
+            } catch (error) {
+                botBubble.innerHTML = `<span class="text-red-400">Error: ${error.message}. (Did you add your API keys in the HTML?)</span>`;
+            }
+
+            isGenerating = false;
+            sendBtn.classList.remove('opacity-50');
+            chatWindow.scrollTo(0, chatWindow.scrollHeight);
+        }
+
+        // Auto-resize textarea
+        userInputBox.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+
+        // Send on Enter (Shift+Enter for new line)
+        userInputBox.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+            }
+        });
+
+        sendBtn.addEventListener('click', handleSend);
+
+        // --- 4. ADMIN PANEL ---
         async function openAdmin() {
             document.getElementById('admin-panel').classList.remove('hidden');
             const snap = await db.collection('users').get();
@@ -169,32 +317,17 @@
             snap.forEach(doc => {
                 const u = doc.data();
                 table.innerHTML += `
-                    <tr class="border-b border-gray-800 text-sm">
-                        <td class="p-3">${u.email}</td>
-                        <td class="p-3"><span class="px-2 py-0.5 rounded bg-gray-700">${u.role}</span></td>
-                        <td class="p-3 font-mono text-green-400">${u.tokens}</td>
-                        <td class="p-3 space-x-2">
-                            <button onclick="addTokens('${doc.id}', 5000)" class="bg-green-600 hover:bg-green-700 px-3 py-1 rounded text-xs text-white">+5k Tokens</button>
-                            <button onclick="makeAdmin('${doc.id}')" class="bg-blue-600 hover:bg-blue-700 px-3 py-1 rounded text-xs text-white">Make Admin</button>
+                    <tr class="hover:bg-white/[0.02] transition-colors">
+                        <td class="p-4 text-sm font-medium">${u.email}</td>
+                        <td class="p-4"><span class="text-[10px] px-2 py-0.5 rounded-full bg-gray-800 text-gray-400 uppercase font-bold border border-gray-700">${u.role}</span></td>
+                        <td class="p-4 font-mono text-green-400 text-sm">${u.tokens.toLocaleString()}</td>
+                        <td class="p-4 space-x-2 text-right">
+                            <button onclick="db.collection('users').doc('${doc.id}').update({tokens: firebase.firestore.FieldValue.increment(10000)}); openAdmin();" class="bg-green-600/10 text-green-500 border border-green-500/30 px-3 py-1 rounded text-[10px] font-bold uppercase hover:bg-green-600 hover:text-white transition-all">+10k</button>
                         </td>
                     </tr>
                 `;
             });
         }
-
-        async function addTokens(id, amt) {
-            await db.collection('users').doc(id).update({ tokens: firebase.firestore.FieldValue.increment(amt) });
-            openAdmin();
-        }
-
-        async function makeAdmin(id) {
-            if(confirm("Promote this user to Admin?")) {
-                await db.collection('users').doc(id).update({ role: 'admin' });
-                openAdmin();
-            }
-        }
-
-        function closeAdmin() { document.getElementById('admin-panel').classList.add('hidden'); }
     </script>
 </body>
 </html>
