@@ -1,92 +1,71 @@
-import express from "express";
-import cors from "cors";
-import dotenv from "dotenv";
-import pkg from "pg";
-
-dotenv.config();
-const { Pool } = pkg;
+const express = require("express");
+const cors = require("cors");
+const { Pool } = require("pg");
 
 const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-/* =============================
-   DATABASE CONNECTION
-============================= */
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false }
+// PostgreSQL Connection (Optional but Ready)
+let pool;
+
+if (process.env.DATABASE_URL) {
+  pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+      rejectUnauthorized: false,
+    },
+  });
+
+  console.log("✅ Database Connected");
+} else {
+  console.log("⚠ No DATABASE_URL Found");
+}
+
+// Test Route
+app.get("/api/test", (req, res) => {
+  res.json({ status: "ClutchByte API Running 🚀" });
 });
 
-/* =============================
-   ROOT ROUTE (Fixes Cannot GET /)
-============================= */
+// Chat Route
+app.post("/api/chat", async (req, res) => {
+  try {
+    const { message } = req.body;
+
+    if (!message) {
+      return res.status(400).json({ error: "Message is required" });
+    }
+
+    // Save message to database (if connected)
+    if (pool) {
+      await pool.query(
+        "CREATE TABLE IF NOT EXISTS messages (id SERIAL PRIMARY KEY, content TEXT)"
+      );
+
+      await pool.query("INSERT INTO messages (content) VALUES ($1)", [
+        message,
+      ]);
+    }
+
+    // Simple reply (you can replace with OpenAI later)
+    res.json({
+      reply: "You said: " + message,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Server Error" });
+  }
+});
+
+// Root Route
 app.get("/", (req, res) => {
   res.send("🚀 ClutchByte Enterprise Backend Running");
 });
 
-/* =============================
-   HEALTH CHECK
-============================= */
-app.get("/health", (req, res) => {
-  res.json({
-    status: "OK",
-    uptime: process.uptime()
-  });
-});
-
-/* =============================
-   CHAT ROUTE
-============================= */
-app.post("/chat", async (req, res) => {
-  try {
-    const { userId, messages } = req.body;
-
-    if (!messages || !Array.isArray(messages)) {
-      return res.status(400).json({ error: "Messages required" });
-    }
-
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: "gpt-3.5-turbo",
-        messages
-      })
-    });
-
-    const data = await response.json();
-
-    if (!data.choices) {
-      return res.status(500).json({ error: "AI response error", data });
-    }
-
-    const reply = data.choices[0].message.content;
-
-    // Save to database
-    if (userId) {
-      await pool.query(
-        "INSERT INTO chats(user_id, message) VALUES($1, $2)",
-        [userId, reply]
-      );
-    }
-
-    res.json(data);
-
-  } catch (error) {
-    console.error("Server error:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-/* =============================
-   START SERVER
-============================= */
-const PORT = process.env.PORT || 10000;
-
+// Start Server
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
